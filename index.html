@@ -6,276 +6,200 @@
   <title>QuizBattle - Real-Time Quiz Games</title>
   <link rel="stylesheet" href="css/main.css">
   <style>
-    /* ---- HERO ---- */
     .hero {
       position: relative;
-      min-height: 90vh;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 80px 24px 60px;
+      padding: 100px 24px 80px;
       overflow: hidden;
     }
-
     .hero-orb {
       position: absolute;
-      width: 500px;
-      height: 500px;
+      width: 500px; height: 500px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(168,85,247,0.1) 50%, transparent 70%);
       filter: blur(60px);
       animation: float 12s ease-in-out infinite;
       pointer-events: none;
-      z-index: 0;
     }
-
     .hero-orb-2 {
       position: absolute;
-      width: 400px;
-      height: 400px;
+      width: 400px; height: 400px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(99,102,241,0.08) 50%, transparent 70%);
       filter: blur(50px);
       animation: float 15s ease-in-out infinite reverse;
       pointer-events: none;
-      z-index: 0;
     }
-
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 700px;
+    .hero-inner {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      gap: 80px; max-width: 1100px; width: 100%; flex-wrap: wrap;
     }
-
+    .hero-text { max-width: 480px; animation: fadeInUp 0.8s ease; }
     .hero-badge {
-      display: inline-block;
-      background: var(--accent-light);
-      color: var(--accent);
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 24px;
-      border: 1px solid var(--card-border);
+      display: inline-block; background: var(--accent-light); color: var(--accent);
+      padding: 6px 18px; border-radius: 20px; font-size: 0.85rem;
+      font-weight: 600; margin-bottom: 24px; border: 1px solid var(--card-border);
     }
-
-    .hero h1 {
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 20px;
-      letter-spacing: -0.02em;
+    .hero-text h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800;
+      line-height: 1.1; margin-bottom: 20px; letter-spacing: -0.02em;
     }
-
-    .hero h1 .gradient-text {
+    .hero-text h1 .gradient-text {
       background: linear-gradient(135deg, var(--accent) 0%, #A855F7 50%, #EC4899 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
+    .hero-text p { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.7; }
+    .hero-stats { display: flex; gap: 36px; margin-top: 40px; }
+    .hero-stat { text-align: center; }
+    .hero-stat .number { font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1; }
+    .hero-stat .label { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
 
-    .hero p {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      margin-bottom: 36px;
-      max-width: 520px;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.7;
+    .hero-login {
+      width: 100%; max-width: 400px;
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl); padding: 36px;
+      box-shadow: var(--shadow-lg); animation: fadeInUp 0.8s ease 0.2s both;
     }
-
-    .hero-buttons {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      flex-wrap: wrap;
+    .login-mode-badge { text-align: center; margin-bottom: 24px; }
+    .login-mode-badge span {
+      display: inline-block; background: var(--accent-light); color: var(--accent);
+      padding: 5px 16px; border-radius: 16px; font-size: 0.8rem; font-weight: 600;
     }
-
-    /* ---- FEATURES BENTO ---- */
-    .features {
-      padding: 80px 24px;
-      max-width: 1100px;
-      margin: 0 auto;
+    .admin-mode .login-mode-badge span { background: rgba(220,38,38,0.1); color: var(--danger); }
+    .hero-login h2 { text-align: center; font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+    .hero-login .subtitle { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; }
+    .login-error {
+      background: var(--danger-bg); color: var(--danger); padding: 10px 14px;
+      border-radius: var(--radius); font-size: 0.85rem; margin-bottom: 16px;
+      display: none; animation: fadeIn 0.3s ease;
     }
-
-    .features-header {
-      text-align: center;
-      margin-bottom: 48px;
+    .login-form-group { margin-bottom: 16px; }
+    .login-form-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--text); }
+    .login-form-group input {
+      width: 100%; padding: 12px 16px; background: var(--input-bg);
+      border: 1px solid var(--input-border); border-radius: var(--radius);
+      font-size: 0.95rem; color: var(--text); outline: none; transition: var(--transition);
     }
-
-    .features-header h2 {
-      font-size: 2rem;
-      font-weight: 800;
-      margin-bottom: 12px;
+    .login-form-group input:focus { border-color: var(--input-focus); box-shadow: 0 0 0 3px var(--accent-light); }
+    .login-form-group input::placeholder { color: var(--text-muted); }
+    .login-actions { margin-top: 20px; }
+    .login-actions .btn { width: 100%; padding: 13px; font-size: 1rem; }
+    .login-footer { text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); }
+    .login-footer a { font-weight: 600; }
+    .admin-trigger {
+      margin-top: 16px; padding-top: 16px;
+      border-top: 1px solid var(--card-border); text-align: center;
     }
-
-    .features-header p {
-      color: var(--text-secondary);
-      font-size: 1.05rem;
+    .admin-trigger input {
+      width: 100%; padding: 10px 14px; background: transparent;
+      border: 1px dashed var(--input-border); border-radius: var(--radius);
+      font-size: 0.82rem; color: var(--text-muted); text-align: center;
+      outline: none; transition: var(--transition);
     }
+    .admin-trigger input:focus { border-color: var(--accent); color: var(--text); border-style: solid; }
+    .admin-trigger input::placeholder { color: var(--text-muted); }
 
-    .bento-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 20px;
+    .float-card {
+      position: absolute; background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 14px 20px; box-shadow: var(--shadow);
+      font-size: 0.85rem; font-weight: 600; display: flex; align-items: center;
+      gap: 10px; z-index: 2;
     }
+    .float-card.fc-1 { top: 18%; left: 6%; animation: floatAround 8s ease-in-out infinite; }
+    .float-card.fc-2 { bottom: 22%; right: 8%; animation: floatAround 8s ease-in-out infinite 3s; }
+    .float-card.fc-3 { top: 30%; right: 4%; animation: floatAround 8s ease-in-out infinite 5s; }
+    .fc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    @keyframes floatAround { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
+    .features { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
+    .features-header { text-align: center; margin-bottom: 48px; }
+    .features-header h2 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; }
+    .features-header p { color: var(--text-secondary); font-size: 1.05rem; }
+    .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .bento-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-xl);
-      padding: 32px;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease; display: flex; flex-direction: column; gap: 12px;
+      opacity: 0; transform: translateY(30px); animation: fadeInUp 0.6s ease forwards;
     }
-
-    .bento-card:hover {
-      border-color: var(--card-hover-border);
-      box-shadow: var(--shadow-lg), var(--shadow-glow);
-      transform: translateY(-3px);
-    }
-
-    .bento-card.large {
-      grid-column: 1 / -1;
-      padding: 40px;
-    }
-
+    .bento-card:nth-child(1) { animation-delay: 0.1s; }
+    .bento-card:nth-child(2) { animation-delay: 0.2s; }
+    .bento-card:nth-child(3) { animation-delay: 0.3s; }
+    .bento-card:nth-child(4) { animation-delay: 0.4s; }
+    .bento-card:nth-child(5) { animation-delay: 0.5s; }
+    .bento-card:hover { border-color: var(--card-hover-border); box-shadow: var(--shadow-lg), var(--shadow-glow); transform: translateY(-3px); }
+    .bento-card.large { grid-column: 1 / -1; padding: 40px; }
     .bento-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: var(--accent-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--accent);
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--accent-light); display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 700; color: var(--accent);
+    }
+    .bento-card h3 { font-size: 1.15rem; font-weight: 700; }
+    .bento-card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+
+    .how-it-works { padding: 60px 24px 80px; max-width: 900px; margin: 0 auto; }
+    .how-it-works h2 { text-align: center; font-size: 2rem; font-weight: 800; margin-bottom: 48px; }
+    .steps { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; }
+    .step { text-align: center; flex: 1; min-width: 200px; max-width: 240px; }
+    .step-num {
+      width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 16px;
+      background: var(--accent-light); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; font-weight: 800; border: 2px solid var(--accent);
+    }
+    .step h4 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .step p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+    .step-connector {
+      display: flex; align-items: center; padding-top: 24px;
+      color: var(--text-muted); font-size: 1.5rem;
     }
 
-    .bento-card h3 {
-      font-size: 1.15rem;
-      font-weight: 700;
-    }
-
-    .bento-card p {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-
-    /* ---- FOOTER ---- */
-    .site-footer {
-      border-top: 1px solid var(--card-border);
-      padding: 40px 24px;
-      text-align: center;
-    }
-
-    .site-footer p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-      justify-content: center;
-      margin-top: 16px;
-    }
-
-    .footer-links a {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      transition: var(--transition);
-    }
-
+    .site-footer { border-top: 1px solid var(--card-border); padding: 40px 24px; text-align: center; }
+    .site-footer p { color: var(--text-muted); font-size: 0.9rem; }
+    .footer-links { display: flex; gap: 24px; justify-content: center; margin-top: 16px; }
+    .footer-links a { color: var(--text-secondary); font-size: 0.9rem; transition: var(--transition); }
     .footer-links a:hover { color: var(--accent); }
 
-    /* ---- NAV LINKS ---- */
-    .nav-link {
-      color: var(--text-secondary);
-      font-weight: 500;
-      font-size: 0.9rem;
-      padding: 8px 14px;
-      border-radius: 8px;
-      transition: var(--transition);
-    }
-
-    .nav-link:hover {
-      color: var(--accent);
-      background: var(--accent-light);
-    }
-
-    /* ---- HAMBURGER ---- */
-    .hamburger {
-      display: none;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 8px;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .hamburger span {
-      width: 22px;
-      height: 2px;
-      background: var(--text);
-      border-radius: 2px;
-      transition: var(--transition);
-    }
-
+    .nav-link { color: var(--text-secondary); font-weight: 500; font-size: 0.9rem; padding: 8px 14px; border-radius: 8px; transition: var(--transition); }
+    .nav-link:hover { color: var(--accent); background: var(--accent-light); }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; flex-direction: column; gap: 5px; }
+    .hamburger span { width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: var(--transition); }
     .mobile-menu {
-      display: none;
-      position: fixed;
-      top: 64px;
-      right: 0;
-      width: 280px;
-      height: calc(100vh - 64px);
-      background: var(--bg);
-      border-left: 1px solid var(--card-border);
-      padding: 24px;
-      z-index: 99;
-      flex-direction: column;
-      gap: 8px;
-      animation: slideInRight 0.3s ease;
+      display: none; position: fixed; top: 64px; right: 0; width: 280px;
+      height: calc(100vh - 64px); background: var(--bg);
+      border-left: 1px solid var(--card-border); padding: 24px; z-index: 99;
+      flex-direction: column; gap: 8px; animation: slideInRight 0.3s ease;
     }
-
     .mobile-menu.active { display: flex; }
-
-    @keyframes slideInRight {
-      from { transform: translateX(100%); }
-      to { transform: translateX(0); }
-    }
-
-    .mobile-menu .nav-link {
-      padding: 14px 16px;
-      font-size: 1rem;
-    }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .mobile-menu .nav-link { padding: 14px 16px; font-size: 1rem; }
 
     @media (max-width: 768px) {
+      .hero { padding: 80px 16px 60px; }
+      .hero-inner { gap: 40px; }
+      .hero-text { text-align: center; max-width: 100%; }
+      .hero-stats { justify-content: center; }
+      .float-card { display: none; }
       .navbar-links { display: none; }
       .hamburger { display: flex; }
       .bento-grid { grid-template-columns: 1fr; }
       .bento-card.large { grid-column: 1; }
+      .step-connector { display: none; }
     }
   </style>
 </head>
 <body>
   <div id="loading-overlay"><div class="spinner"></div></div>
 
-  <!-- Navbar -->
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">QuizBattle</a>
     <div class="navbar-links">
       <a href="#features" class="nav-link">Features</a>
-      <a href="pages/login.html" class="nav-link">Login</a>
-      <a href="pages/register.html" class="nav-link">Register</a>
+      <a href="#how" class="nav-link">How It Works</a>
     </div>
     <div class="navbar-actions">
       <button class="theme-toggle" onclick="Theme.toggle()" aria-label="Toggle theme">
@@ -284,93 +208,317 @@
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="#818CF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </div>
       </button>
-      <button class="hamburger" onclick="toggleMobile()">
-        <span></span><span></span><span></span>
-      </button>
+      <button class="hamburger" onclick="toggleMobile()"><span></span><span></span><span></span></button>
     </div>
   </nav>
 
-  <!-- Mobile Menu -->
   <div class="mobile-menu" id="mobileMenu">
     <a href="#features" class="nav-link" onclick="closeMobile()">Features</a>
-    <a href="pages/login.html" class="nav-link">Login</a>
-    <a href="pages/register.html" class="nav-link">Register</a>
-    <a href="pages/setup-admin.html" class="nav-link">Admin Setup</a>
+    <a href="#how" class="nav-link" onclick="closeMobile()">How It Works</a>
   </div>
 
-  <!-- Hero -->
   <section class="hero">
     <div class="hero-orb"></div>
     <div class="hero-orb-2"></div>
-    <div class="hero-content">
-      <div class="hero-badge">Real-Time Quiz Platform</div>
-      <h1>
-        Make Learning<br>
-        <span class="gradient-text">Competitive & Fun</span>
-      </h1>
-      <p>
-        Create quizzes, host live games, and watch students compete in real-time.
-        Speed-based scoring keeps everyone on their toes.
-      </p>
-      <div class="hero-buttons">
-        <a href="pages/register.html" class="btn btn-primary btn-lg">Get Started Free</a>
-        <a href="pages/login.html" class="btn btn-outline btn-lg">Student Login</a>
+
+    <div class="float-card fc-1">
+      <div class="fc-dot" style="background:var(--success);"></div>
+      +250 points
+    </div>
+    <div class="float-card fc-2">
+      <div class="fc-dot" style="background:var(--accent);"></div>
+      12 players online
+    </div>
+    <div class="float-card fc-3">
+      <div class="fc-dot" style="background:var(--warning);"></div>
+      New quiz created
+    </div>
+
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-badge">Real-Time Quiz Platform</div>
+        <h1>
+          Make Learning<br>
+          <span class="gradient-text">Competitive & Fun</span>
+        </h1>
+        <p>
+          Create quizzes, host live games, and watch students compete in real-time.
+          Speed-based scoring keeps everyone on their toes and makes every second count.
+        </p>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="number">3</div>
+            <div class="label">Question Types</div>
+          </div>
+          <div class="hero-stat">
+            <div class="number">6</div>
+            <div class="label">Digit PIN Join</div>
+          </div>
+          <div class="hero-stat">
+            <div class="number">Live</div>
+            <div class="label">Leaderboards</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-login" id="heroLogin">
+        <div class="login-mode-badge">
+          <span id="modeLabel">Student Login</span>
+        </div>
+        <h2 id="loginTitle">Welcome Back</h2>
+        <p class="subtitle" id="loginSubtitle">Sign in to your student account</p>
+
+        <div class="login-error" id="loginError"></div>
+
+        <div id="studentForm">
+          <div class="login-form-group">
+            <label>Email</label>
+            <input type="email" id="sEmail" placeholder="your@email.com" autocomplete="email">
+          </div>
+          <div class="login-form-group">
+            <label>Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="sPass" placeholder="Enter password" autocomplete="current-password" style="padding-right:45px;">
+              <button type="button" class="eye-btn" onclick="togglePass('sPass', this)" aria-label="Toggle password visibility">
+                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="login-actions">
+            <button class="btn btn-primary btn-lg" onclick="studentLogin()">Login</button>
+          </div>
+          <p class="login-footer">
+            No account? <a href="pages/register.html">Register here</a>
+          </p>
+        </div>
+
+        <div id="adminForm" style="display:none;">
+          <div class="login-form-group">
+            <label>Admin Email</label>
+            <input type="email" id="aEmail" placeholder="admin@school.edu" autocomplete="email">
+          </div>
+          <div class="login-form-group">
+            <label>Admin Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="aPass" placeholder="Enter admin password" autocomplete="current-password" style="padding-right:45px;">
+              <button type="button" class="eye-btn" onclick="togglePass('aPass', this)" aria-label="Toggle password visibility">
+                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="login-actions">
+            <button class="btn btn-primary btn-lg" style="background:var(--danger); border-color:var(--danger);" onclick="adminLogin()">Login as Admin</button>
+          </div>
+          <p class="login-footer">
+            First time? <a href="pages/setup-admin.html">Create Admin Account</a>
+          </p>
+        </div>
+
+        <div class="admin-trigger">
+          <input type="text" id="adminCode" placeholder="Enter admin access code..." oninput="checkAdminCode(this)">
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
   <section class="features" id="features">
     <div class="features-header">
       <h2>Everything You Need</h2>
-      <p>Built for teachers who want engagement, not complexity</p>
+      <p>Whether you are a teacher running quizzes or a student competing, QuizBattle has you covered</p>
     </div>
     <div class="bento-grid">
       <div class="bento-card large">
         <div class="bento-icon">Q</div>
-        <h3>Live Quiz Games</h3>
-        <p>Host real-time quiz competitions with 6-digit PIN codes. Students join from any device and answer questions as a countdown timer ticks. Speed matters — faster answers earn more points.</p>
+        <h3>Real-Time Quiz Games</h3>
+        <p>Jump into live quiz battles with a simple 6-digit code. No app downloads needed - just open your browser on any phone, tablet, or laptop. Every question comes with a countdown timer, and the faster you answer, the more points you earn. It is fast, it is exciting, and it keeps you locked in from start to finish.</p>
       </div>
       <div class="bento-card">
         <div class="bento-icon">B</div>
-        <h3>Quiz Builder</h3>
-        <p>Create quizzes with Multiple Choice, True/False, and Identification questions. Add images, set time limits, and customize point values.</p>
+        <h3>Builds Quick Decision-Making</h3>
+        <p>With a ticking clock on every question, participants are forced to think on their feet. There is no time to overthink or second-guess. This trains the brain to process information faster, recall answers under pressure, and make confident decisions in seconds.</p>
       </div>
       <div class="bento-card">
         <div class="bento-icon">L</div>
-        <h3>Live Leaderboards</h3>
-        <p>Watch rankings update in real-time as students answer. Gold, silver, and bronze podiums celebrate the top performers.</p>
+        <h3>Sharpens Critical Thinking</h3>
+        <p>Questions are not just about memorization. Identification and True/False rounds push participants to analyze, evaluate, and reason through each problem. The competitive format rewards accuracy over guessing, so players naturally develop stronger thinking skills over time.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon">C</div>
+        <h3>Challenges Under Pressure</h3>
+        <p>The combination of speed scoring and live rankings creates a high-pressure environment that mirrors real exam conditions. Participants learn to stay calm, focus their attention, and perform at their best even when the stakes are high.</p>
       </div>
       <div class="bento-card">
         <div class="bento-icon">R</div>
-        <h3>Reports & Export</h3>
-        <p>After every game, view detailed results — scores, accuracy, rankings. Export to CSV for your records.</p>
+        <h3>Healthy Competition</h3>
+        <p>Seeing your name climb the leaderboard after a correct answer is a rush. The live ranking system motivates participants to push harder, study better, and come back stronger. It turns learning into a game that everyone wants to win.</p>
       </div>
       <div class="bento-card">
-        <div class="bento-icon">U</div>
-        <h3>User Management</h3>
-        <p>View all registered students, track their progress, and manage access with the built-in ban system.</p>
+        <div class="bento-icon">D</div>
+        <h3>Builds Retention &amp; Recall</h3>
+        <p>The fast-paced format forces active recall instead of passive reading. Participants who answer questions under time pressure remember the material longer and recall it more accurately in future exams and real-world situations.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon">T</div>
+        <h3>Tracks Your Growth</h3>
+        <p>Every game adds to your profile. See your total points climb, track how many games you have played, and measure your improvement over time. It gives participants a clear picture of where they started and how far they have come.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon">S</div>
+        <h3>Instant Feedback Loop</h3>
+        <p>After every single question, you see whether you got it right, how many points you earned, and where you rank. This instant feedback helps participants learn from mistakes immediately and adjust their strategy for the next question.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon">P</div>
+        <h3>Works on Any Device</h3>
+        <p>No downloads, no installs. Participants join through a web browser on phones, tablets, laptops, or desktops. As long as there is internet, the game works. It is accessible to everyone, everywhere.</p>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
+  <section class="how-it-works" id="how">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Create a Quiz</h4>
+        <p>Build your quiz with different question types. Set time limits and point values.</p>
+      </div>
+      <div class="step-connector">&rarr;</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Start a Game</h4>
+        <p>Generate a 6-digit PIN and share it with your students. They join from any device.</p>
+      </div>
+      <div class="step-connector">&rarr;</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Compete &amp; Learn</h4>
+        <p>Students answer in real-time. Faster answers earn more points. Watch the leaderboard update live.</p>
+      </div>
+    </div>
+  </section>
+
   <footer class="site-footer">
     <p>QuizBattle &mdash; Real-Time Quiz Game System</p>
-    <div class="footer-links">
-      <a href="pages/login.html">Student Login</a>
-      <a href="pages/setup-admin.html">Admin Setup</a>
-    </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/theme.js"></script>
   <script>
-    function toggleMobile() {
-      document.getElementById('mobileMenu').classList.toggle('active');
+    function toggleMobile() { document.getElementById('mobileMenu').classList.toggle('active'); }
+    function closeMobile() { document.getElementById('mobileMenu').classList.remove('active'); }
+
+    let isAdminMode = false;
+
+    function togglePass(fieldId, btn) {
+      const field = document.getElementById(fieldId);
+      const eyeOpen = btn.querySelector('.eye-open');
+      const eyeClosed = btn.querySelector('.eye-closed');
+      if (field.type === 'password') {
+        field.type = 'text';
+        eyeOpen.style.display = 'none';
+        eyeClosed.style.display = 'block';
+      } else {
+        field.type = 'password';
+        eyeOpen.style.display = 'block';
+        eyeClosed.style.display = 'none';
+      }
     }
-    function closeMobile() {
-      document.getElementById('mobileMenu').classList.remove('active');
+
+    function checkAdminCode(input) {
+      const v = input.value.trim();
+      const card = document.getElementById('heroLogin');
+      const label = document.getElementById('modeLabel');
+      const title = document.getElementById('loginTitle');
+      const subtitle = document.getElementById('loginSubtitle');
+      const sf = document.getElementById('studentForm');
+      const af = document.getElementById('adminForm');
+
+      if (v === 'admin123') {
+        isAdminMode = true;
+        card.classList.add('admin-mode');
+        label.textContent = 'Admin Access';
+        title.textContent = 'Admin Portal';
+        subtitle.textContent = 'Sign in with your admin credentials';
+        sf.style.display = 'none';
+        af.style.display = 'block';
+        input.value = '';
+        input.placeholder = 'Admin mode active';
+        input.disabled = true;
+        input.style.opacity = '0.5';
+        document.getElementById('aEmail').focus();
+      }
     }
+
+    function showLoginError(msg) {
+      const el = document.getElementById('loginError');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    async function studentLogin() {
+      const email = document.getElementById('sEmail').value.trim();
+      const password = document.getElementById('sPass').value;
+      if (!email || !password) return showLoginError('Fill in all fields');
+
+      localStorage.setItem('qb_credentials', JSON.stringify({ email, password }));
+      document.getElementById('loading-overlay').style.display = 'flex';
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        const { data: adminCheck } = await supabaseClient.from('admins').select('id').eq('id', data.user.id).maybeSingle();
+        if (adminCheck) {
+          document.getElementById('loading-overlay').style.display = 'none';
+          return showLoginError('This is an admin account. Use the admin access code.');
+        }
+
+        window.location.href = 'pages/dashboard.html';
+      } catch (e) {
+        document.getElementById('loading-overlay').style.display = 'none';
+        showLoginError(e.message || 'Login failed');
+      }
+    }
+
+    async function adminLogin() {
+      const email = document.getElementById('aEmail').value.trim();
+      const password = document.getElementById('aPass').value;
+      if (!email || !password) return showLoginError('Fill in all fields');
+
+      document.getElementById('loading-overlay').style.display = 'flex';
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        const { data: adminRow, error: adminErr } = await supabaseClient.from('admins').select('id').eq('id', data.user.id).maybeSingle();
+        if (adminErr || !adminRow) {
+          await supabaseClient.auth.signOut();
+          document.getElementById('loading-overlay').style.display = 'none';
+          return showLoginError('This account is not an admin.');
+        }
+
+        window.location.href = 'pages/admin.html';
+      } catch (e) {
+        document.getElementById('loading-overlay').style.display = 'none';
+        showLoginError(e.message || 'Login failed');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+          const { data: adminCheck } = await supabaseClient.from('admins').select('id').eq('id', session.user.id).maybeSingle();
+          window.location.href = adminCheck ? 'pages/admin.html' : 'pages/dashboard.html';
+        }
+      } catch (e) { console.error(e); }
+    });
   </script>
 </body>
 </html>

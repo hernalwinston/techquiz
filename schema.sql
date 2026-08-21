@@ -37,6 +37,8 @@ CREATE TABLE user_profiles (
   email TEXT NOT NULL DEFAULT '',
   name TEXT NOT NULL,
   year_section TEXT DEFAULT '',
+  bio TEXT DEFAULT '',
+  avatar_url TEXT DEFAULT '',
   is_guest BOOLEAN DEFAULT false,
   total_points INTEGER DEFAULT 0,
   games_played INTEGER DEFAULT 0,
@@ -156,3 +158,10 @@ CREATE POLICY "Allow authenticated all banned" ON banned FOR ALL USING (auth.rol
 ALTER PUBLICATION supabase_realtime ADD TABLE games;
 ALTER PUBLICATION supabase_realtime ADD TABLE game_players;
 ALTER PUBLICATION supabase_realtime ADD TABLE game_answers;
+
+-- Storage bucket for avatars
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Avatar upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated');
+CREATE POLICY "Avatar read" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');

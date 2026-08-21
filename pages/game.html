@@ -105,6 +105,10 @@
         <h3 style="margin:30px 0 16px; font-weight:700;">Leaderboard</h3>
         <div id="endLeaderboard" class="leaderboard" style="margin-bottom:30px;"></div>
         <button class="btn btn-primary btn-lg" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+        <div style="display:flex; gap:10px; margin-top:12px; justify-content:center;">
+          <a href="history.html" class="btn btn-outline btn-sm">View History</a>
+          <a href="rankings.html" class="btn btn-outline btn-sm">Rankings</a>
+        </div>
       </div>
     </div>
   </div>
@@ -375,6 +379,17 @@
         lbHtml += `<div class="leaderboard-entry"${isMe}><span class="rank">#${i+1}</span><span class="leaderboard-name"><span class="initial-avatar">${Utils.sanitize(s.name).charAt(0).toUpperCase()}</span>${Utils.sanitize(s.name)}</span><span class="leaderboard-score">${s.total} pts</span></div>`;
       });
       document.getElementById('endLeaderboard').innerHTML = lbHtml || '<p style="color:var(--text-muted);">No data available</p>';
+
+      try {
+        const { data: prof } = await supabaseClient.from('user_profiles').select('total_points, games_played').eq('id', Auth.currentUser.id).maybeSingle();
+        if (prof) {
+          await supabaseClient.from('user_profiles').update({
+            total_points: (prof.total_points || 0) + myScore,
+            games_played: (prof.games_played || 0) + 1
+          }).eq('id', Auth.currentUser.id);
+        }
+      } catch (e) { console.error('Profile update error:', e); }
+
       if (rank <= 3) Utils.createConfetti(document.getElementById('confettiContainer'));
     }
 

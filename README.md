@@ -1,3 +1,9 @@
+show the admin form  is
+email is admin
+password is admin123
+
+
+
 # QuizBattle - Real-Time Quiz Game System
 
 A complete quiz game system with admin dashboard, student registration, live games with real-time scoring, leaderboards, and reports. Powered by **Supabase**.

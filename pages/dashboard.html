@@ -70,6 +70,9 @@
     <nav class="navbar">
       <a href="dashboard.html" class="navbar-brand">QuizBattle <span>Student</span></a>
       <div class="navbar-actions">
+        <a href="rankings.html" class="btn btn-ghost btn-sm">Rankings</a>
+        <a href="history.html" class="btn btn-ghost btn-sm">History</a>
+        <a href="profile.html" class="btn btn-ghost btn-sm">Profile</a>
         <button class="btn btn-primary btn-sm" onclick="joinGameModal()">Join Game</button>
         <button class="theme-toggle" onclick="Theme.toggle()" aria-label="Toggle theme">
           <div class="knob">
@@ -176,7 +179,12 @@
     }
 
     function renderProfile(d) {
-      document.getElementById('userAvatar').textContent = d.name ? d.name.charAt(0).toUpperCase() : '?';
+      const avatarEl = document.getElementById('userAvatar');
+      if (d.avatar_url) {
+        avatarEl.innerHTML = `<img src="${d.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        avatarEl.textContent = d.name ? d.name.charAt(0).toUpperCase() : '?';
+      }
       document.getElementById('userName').textContent = d.name;
       document.getElementById('userYear').textContent = d.year_section || '';
       document.getElementById('totalPoints').textContent = d.total_points || 0;
