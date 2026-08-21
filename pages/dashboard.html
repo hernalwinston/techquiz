@@ -160,20 +160,21 @@
     });
 
     async function loadUserProfile(uid) {
-      const { data } = await supabaseClient.from('user_profiles').select('*').eq('id', uid).single();
+      let { data } = await supabaseClient.from('user_profiles').select('*').eq('id', uid).single();
       if (!data) {
         const stored = JSON.parse(localStorage.getItem('qb_profile') || '{}');
-        if (stored.name) {
+        const name = stored.name || Auth.currentUser?.user_metadata?.name || '';
+        if (name) {
           await supabaseClient.from('user_profiles').upsert({
-            id: uid, name: stored.name, year_section: stored.yearSection || '',
+            id: uid, name: name, year_section: stored.yearSection || '',
+            email: Auth.currentUser?.email || '',
             is_guest: false, total_points: 0, games_played: 0
-          }, { onConflict: 'id', ignoreDuplicates: true });
+          }, { onConflict: 'id' });
           const { data: r } = await supabaseClient.from('user_profiles').select('*').eq('id', uid).single();
-          if (r) { userData = r; renderProfile(r); return; }
+          if (r) data = r;
         }
-        window.location.href = 'register.html';
-        return;
       }
+      if (!data) return;
       userData = data;
       renderProfile(data);
     }

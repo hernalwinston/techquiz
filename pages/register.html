@@ -192,7 +192,10 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       const user = await Auth.init();
-      if (user) window.location.href = 'dashboard.html';
+      if (user) {
+        const { data } = await supabaseClient.from('user_profiles').select('id').eq('id', user.id).maybeSingle();
+        if (data) window.location.href = 'dashboard.html';
+      }
     });
 
     function togglePass(fieldId, btn) {
