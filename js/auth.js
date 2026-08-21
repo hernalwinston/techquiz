@@ -90,11 +90,8 @@ const Auth = {
   },
 
   // ---- STUDENT: Register ----
-  async registerStudent(name, yearSection) {
+  async registerStudent(name, yearSection, email, password) {
     try {
-      const email = "student_" + Date.now() + "@quizbattle.app";
-      const password = "QB_" + Date.now() + "!";
-
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
@@ -105,6 +102,7 @@ const Auth = {
 
       const { error: profileErr } = await supabaseClient.from("user_profiles").upsert({
         id: data.user.id,
+        email: email,
         name: name,
         year_section: yearSection,
         is_guest: false,
@@ -137,7 +135,7 @@ const Auth = {
       }
       this.isAdmin = false;
 
-      return { success: true, uid: data.user.id, email, password };
+      return { success: true, uid: data.user.id };
     } catch (error) {
       return { success: false, error: error.message };
     }
