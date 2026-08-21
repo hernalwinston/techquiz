@@ -617,16 +617,18 @@
     }
 
     async function startGame() {
-      const { data: g } = await supabaseClient.from('games').select('*').eq('id', currentGameId).single();
+      const { data: g, error: gErr } = await supabaseClient.from('games').select('*').eq('id', currentGameId).single();
+      if (gErr || !g) return Utils.showToast('Error loading game', 'error');
       currentGameQuestions = g.questions; currentQuestionIndex = 0;
-      await supabaseClient.from('games').update({ status: 'active' }).eq('id', currentGameId);
+      const { error } = await supabaseClient.from('games').update({ status: 'answering', current_question: 0 }).eq('id', currentGameId);
+      if (error) return Utils.showToast('Error starting game', 'error');
       document.getElementById('gameWaitingRoom').style.display = 'none';
       document.getElementById('gameInPlay').style.display = 'block';
       document.getElementById('totalQNum').textContent = currentGameQuestions.length;
-      showCurrentQuestion();
+      await showCurrentQuestion();
     }
 
-    function showCurrentQuestion() {
+    async function showCurrentQuestion() {
       const q = currentGameQuestions[currentQuestionIndex];
       document.getElementById('currentQNum').textContent = currentQuestionIndex + 1;
       const pct = ((currentQuestionIndex + 1) / currentGameQuestions.length) * 100;
@@ -635,19 +637,20 @@
       if (q.imageUrl) h += `<img src="${q.imageUrl}" style="max-width:280px; border-radius:8px; margin-bottom:10px;">`;
       h += `<span class="question-points">${q.points} pts &bull; ${q.timeLimit}s</span>`;
       document.getElementById('currentQuestionDisplay').innerHTML = h;
-      supabaseClient.from('games').update({ status: 'answering', current_question: currentQuestionIndex }).eq('id', currentGameId);
+      const { error } = await supabaseClient.from('games').update({ status: 'answering', current_question: currentQuestionIndex }).eq('id', currentGameId);
+      if (error) console.error('Failed to update game status:', error);
       startAdminTimer(q.timeLimit);
       startAnswersPoll(currentGameId);
     }
 
-    function startAdminTimer(sec) {
+    async function startAdminTimer(sec) {
       clearInterval(adminTimerInterval); let r = sec;
       const el = document.getElementById('adminTimer'); el.textContent = r; el.className = 'timer-circle timer-green';
-      adminTimerInterval = setInterval(() => {
+      adminTimerInterval = setInterval(async () => {
         r--; el.textContent = r;
         if (r <= 10) el.className = 'timer-circle timer-yellow';
         if (r <= 5) el.className = 'timer-circle timer-red';
-        if (r <= 0) { clearInterval(adminTimerInterval); supabaseClient.from('games').update({ status: 'feedback' }).eq('id', currentGameId); }
+        if (r <= 0) { clearInterval(adminTimerInterval); await supabaseClient.from('games').update({ status: 'feedback' }).eq('id', currentGameId); }
       }, 1000);
     }
 
@@ -655,7 +658,7 @@
       clearInterval(adminTimerInterval); stopAnswersPoll();
       currentQuestionIndex++;
       if (currentQuestionIndex >= currentGameQuestions.length) { await endGame(); return; }
-      showCurrentQuestion();
+      await showCurrentQuestion();
     }
 
     async function showLeaderboard() {

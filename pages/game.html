@@ -116,7 +116,7 @@
   <script>
     let gamePin='', gameId=null, gameData=null, currentQIndex=0, questionStartTime=null;
     let timerInterval=null, hasAnswered=false, myScore=0, gamePollInterval=null;
-    let previousGameStatus=null, previousQuestionIndex=-1;
+    let previousGameStatus=null, previousQuestionIndex=-1, currentVisibleState='joining';
 
     document.addEventListener('DOMContentLoaded', async () => {
       const user = await Auth.init();
@@ -131,12 +131,14 @@
 
     async function joinGame(uid) {
       try {
-        const { data: game } = await supabaseClient.from('games').select('*').eq('pin', gamePin).limit(1).maybeSingle();
-        if (!game) {
+        const { data: game, error } = await supabaseClient.from('games').select('*').eq('pin', gamePin).limit(1).maybeSingle();
+        if (error || !game) {
           document.getElementById('state-joining').innerHTML = `<div class="waiting-screen"><h2>Game Not Found</h2><p style="margin-bottom:20px;">Code "${gamePin}" didn't match.</p><button class="btn btn-primary" onclick="window.location.href='dashboard.html'">Back to Dashboard</button></div>`;
           return;
         }
         gameId = game.id; gameData = game;
+        previousGameStatus = game.status;
+        previousQuestionIndex = game.current_question;
 
         const { data: banned } = await supabaseClient.from('banned').select('*').eq('user_id', uid).maybeSingle();
         if (banned) { Utils.showToast('You have been banned', 'error'); return; }
@@ -153,30 +155,62 @@
 
         await supabaseClient.from('game_players').upsert({ game_id: gameId, user_id: uid, player_name: ud.name });
         document.getElementById('myName').textContent = ud.name;
-        showState('waiting');
+
+        if (game.status === 'answering' && !hasAnswered) {
+          currentQIndex = game.current_question || 0;
+          showState('question');
+          currentVisibleState = 'question';
+          showQuestion();
+        } else if (game.status === 'feedback') {
+          showState('feedback');
+          currentVisibleState = 'feedback';
+          showFeedbackFromServer();
+        } else if (game.status === 'ended') {
+          showEndScreen();
+        } else {
+          showState('waiting');
+          currentVisibleState = 'waiting';
+        }
         startGamePolling(gameId);
       } catch (e) { console.error(e); Utils.showToast('Error joining game', 'error'); }
     }
 
     function startGamePolling(gid) {
       gamePollInterval = setInterval(async () => {
-        const { data } = await supabaseClient.from('games').select('*').eq('id', gid).single();
-        if (!data) return;
-        if (data.status !== previousGameStatus || data.current_question !== previousQuestionIndex) {
-          previousGameStatus = data.status; previousQuestionIndex = data.current_question;
-          gameData = data; handleGameStatusChange(data);
-        }
-      }, 2000);
+        try {
+          const { data, error } = await supabaseClient.from('games').select('*').eq('id', gid).single();
+          if (error || !data) return;
+          gameData = data;
+          processGameState(data);
+        } catch (e) { console.error('Poll error:', e); }
+      }, 1500);
     }
 
-    function handleGameStatusChange(d) {
-      switch (d.status) {
-        case 'active': case 'answering':
-          if (d.current_question !== undefined && (d.current_question !== currentQIndex || d.status === 'answering') && !hasAnswered) {
-            currentQIndex = d.current_question; showQuestion();
-          } break;
-        case 'feedback': showFeedbackFromServer(); break;
-        case 'ended': showEndScreen(); break;
+    function processGameState(d) {
+      if (d.status === 'ended') { showEndScreen(); return; }
+
+      if ((d.status === 'answering' || d.status === 'active') && d.current_question != null) {
+        const qIdx = d.current_question;
+        if (currentVisibleState !== 'question') {
+          currentQIndex = qIdx;
+          showState('question');
+          currentVisibleState = 'question';
+          showQuestion();
+        } else if (qIdx !== currentQIndex) {
+          currentQIndex = qIdx;
+          showQuestion();
+        }
+      } else if (d.status === 'feedback') {
+        if (currentVisibleState !== 'feedback') {
+          showState('feedback');
+          currentVisibleState = 'feedback';
+          showFeedbackFromServer();
+        }
+      } else if (d.status === 'waiting') {
+        if (currentVisibleState !== 'waiting') {
+          showState('waiting');
+          currentVisibleState = 'waiting';
+        }
       }
     }
 
