@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - QuizBattle</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .admin-layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 260px; background: var(--bg-secondary);
+      border-right: 1px solid var(--card-border);
+      position: fixed; top: 0; left: 0; height: 100vh;
+      display: flex; flex-direction: column;
+      z-index: 100; transition: var(--transition);
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .sidebar-header h2 { font-size: 1.2rem; font-weight: 800; }
+    .sidebar-header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+    .sidebar-nav { padding: 12px 0; flex: 1; }
+
+    .sidebar-nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px;
+      color: var(--text-secondary);
+      cursor: pointer; transition: var(--transition);
+      border-left: 3px solid transparent;
+      font-weight: 500; font-size: 0.9rem;
+    }
+
+    .sidebar-nav-item:hover { background: var(--accent-light); color: var(--accent); }
+    .sidebar-nav-item.active {
+      background: var(--accent-light); color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    .sidebar-nav-item .nav-icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: var(--card-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800;
+      color: var(--text-muted);
+    }
+
+    .sidebar-nav-item.active .nav-icon {
+      background: var(--accent); color: white;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .admin-main {
+      margin-left: 260px; flex: 1;
+      padding: 32px; background: var(--bg);
+    }
+
+    .admin-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .admin-header h1 { font-size: 1.6rem; font-weight: 800; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+    .quiz-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .quiz-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 20px;
+      transition: var(--transition); backdrop-filter: blur(8px);
+    }
+
+    .quiz-card:hover {
+      border-color: var(--card-hover-border);
+      box-shadow: var(--shadow), var(--shadow-glow);
+    }
+
+    .quiz-card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .quiz-card-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 14px; margin-bottom: 14px; }
+    .quiz-card-actions { display: flex; gap: 8px; }
+
+    .question-builder {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl); padding: 28px;
+      backdrop-filter: blur(12px);
+    }
+
+    .question-builder-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+
+    .question-item {
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius); padding: 20px;
+      margin-bottom: 14px; background: var(--bg-secondary);
+    }
+
+    .question-item-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .question-item-number { font-weight: 700; color: var(--accent); }
+
+    .option-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .option-row input[type="radio"] {
+      width: 16px; height: 16px; accent-color: var(--accent);
+    }
+
+    .option-row input[type="text"], .option-row label {
+      flex: 1; font-size: 0.9rem; color: var(--text);
+    }
+
+    .user-table {
+      width: 100%; border-collapse: collapse;
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+
+    .user-table thead { background: var(--accent); color: white; }
+    .user-table th, .user-table td { padding: 12px 16px; text-align: left; }
+    .user-table tbody tr { border-bottom: 1px solid var(--card-border); transition: var(--transition); }
+    .user-table tbody tr:hover { background: var(--accent-light); }
+
+    .game-control {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl); padding: 28px;
+      backdrop-filter: blur(12px);
+    }
+
+    .game-control-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+
+    .game-controls-row {
+      display: flex; gap: 12px; justify-content: center;
+      margin: 24px 0; flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .admin-main { margin-left: 0; }
+      .quiz-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay"><div class="spinner"></div></div>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay active" id="loginModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Admin Login</h3>
+        <button class="theme-toggle" onclick="Theme.toggle()" aria-label="Toggle theme">
+          <div class="knob"><div class="icon-sun"></div><div class="icon-moon"></div></div>
+        </button>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" class="form-control" id="loginEmail" placeholder="admin@school.edu">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" style="padding-right:45px;">
+          <button type="button" class="eye-btn" onclick="toggleAdminPass(this)">*</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg" style="width:100%;" onclick="adminLogin()">Login</button>
+      <p style="text-align:center; margin-top:16px; font-size:0.85rem; color:var(--text-muted);">
+        First time? <a href="setup-admin.html">Create Admin Account</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Admin Layout -->
+  <div class="admin-layout" id="adminLayout" style="display:none;">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>QuizBattle</h2>
+        <p>Admin Panel</p>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item active" onclick="switchTab('quizzes')" data-tab="quizzes">
+          <div class="nav-icon">Q</div>
+          <span>Quiz Manager</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('users')" data-tab="users">
+          <div class="nav-icon">U</div>
+          <span>User Management</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('game')" data-tab="game">
+          <div class="nav-icon">G</div>
+          <span>Live Game</span>
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('reports')" data-tab="reports">
+          <div class="nav-icon">R</div>
+          <span>Reports</span>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <span style="font-size:0.8rem; color:var(--text-muted);">Theme</span>
+          <button class="theme-toggle" onclick="Theme.toggle()" aria-label="Toggle theme">
+            <div class="knob"><div class="icon-sun"></div><div class="icon-moon"></div></div>
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="adminLogout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <!-- QUIZ MANAGER -->
+      <div class="tab-panel active" id="tab-quizzes">
+        <div class="admin-header">
+          <h1>Quiz Manager</h1>
+          <button class="btn btn-primary" onclick="showQuizBuilder()">+ Create New Quiz</button>
+        </div>
+        <div id="quizListView">
+          <div class="quiz-list" id="quizList"></div>
+          <div class="empty-state" id="quizEmptyState"><p>No quizzes yet. Create your first quiz!</p></div>
+        </div>
+        <div id="quizBuilderView" style="display:none;">
+          <div class="question-builder">
+            <div class="question-builder-header">
+              <input type="text" class="form-control" id="quizTitle" placeholder="Quiz Title" style="font-size:1.2rem; font-weight:700; border:none; padding:0; max-width:400px; background:transparent;">
+              <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" onclick="closeQuizBuilder()">Cancel</button>
+                <button class="btn btn-success" onclick="saveQuiz()">Save Quiz</button>
+              </div>
+            </div>
+            <div id="questionsContainer"></div>
+            <button class="btn btn-primary" style="width:100%; margin-top:14px;" onclick="addQuestion()">+ Add Question</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- USER MANAGEMENT -->
+      <div class="tab-panel" id="tab-users">
+        <div class="admin-header"><h1>User Management</h1></div>
+        <table class="user-table">
+          <thead><tr><th>User</th><th>Year/Section</th><th>Games</th><th>Points</th><th>Actions</th></tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- LIVE GAME -->
+      <div class="tab-panel" id="tab-game">
+        <div class="admin-header"><h1>Live Game Control</h1></div>
+        <div id="gameSetup" class="game-control">
+          <h3 style="margin-bottom:20px;">Start New Game</h3>
+          <div class="form-group">
+            <label>Select Quiz</label>
+            <select class="form-control" id="gameQuizSelect"><option value="">-- Select a quiz --</option></select>
+          </div>
+          <div class="form-group">
+            <label>Game Mode</label>
+            <select class="form-control" id="gameMode">
+              <option value="individual">Individual</option>
+              <option value="group">Group</option>
+            </select>
+          </div>
+          <div class="form-group" id="groupSizeGroup" style="display:none;">
+            <label>Group Size</label>
+            <input type="number" class="form-control" id="groupSize" value="5" min="2" max="20">
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="createGame()">Create Game</button>
+        </div>
+
+        <div id="gameWaitingRoom" style="display:none;" class="game-control">
+          <div class="game-control-header">
+            <h3>Waiting Room</h3>
+            <span class="game-status-badge waiting">Waiting for players</span>
+          </div>
+          <div class="waiting-room">
+            <p style="margin-bottom:10px;">Share this code with students:</p>
+            <div class="game-pin-display" id="gamePinDisplay"></div>
+            <div class="players-grid" id="playersGrid"></div>
+            <p style="color:var(--text-muted); margin-top:14px;" id="playerCount">0 players joined</p>
+            <button class="btn btn-success btn-lg" style="margin-top:20px;" onclick="startGame()">Start Quiz</button>
+          </div>
+        </div>
+
+        <div id="gameInPlay" style="display:none;" class="game-control">
+          <div class="game-control-header">
+            <h3>Question <span id="currentQNum">1</span> / <span id="totalQNum">0</span></h3>
+            <span class="game-status-badge active">In Progress</span>
+          </div>
+          <div class="timer-container">
+            <div class="timer-circle timer-green" id="adminTimer">20</div>
+          </div>
+          <div class="game-progress">
+            <span style="font-size:0.85rem; color:var(--text-muted);">Progress</span>
+            <div class="game-progress-bar">
+              <div class="game-progress-fill" id="gameProgressFill" style="width:0%"></div>
+            </div>
+            <span style="font-size:0.85rem; color:var(--text-muted);" id="answersReceived">0/0 answered</span>
+          </div>
+          <div id="currentQuestionDisplay" style="margin:20px 0; padding:20px; background:var(--bg-secondary); border-radius:var(--radius); border:1px solid var(--card-border);"></div>
+          <div class="game-answer-grid" id="answerGrid"></div>
+          <div class="game-controls-row">
+            <button class="btn btn-primary btn-lg" onclick="showLeaderboard()">Show Leaderboard</button>
+            <button class="btn btn-success btn-lg" onclick="nextQuestion()">Next Question</button>
+            <button class="btn btn-danger btn-lg" onclick="endGame()">End Game</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="tab-panel" id="tab-reports">
+        <div class="admin-header"><h1>Reports</h1></div>
+        <div class="game-control">
+          <div class="form-group">
+            <label>Select Completed Game</label>
+            <select class="form-control" id="reportGameSelect"><option value="">-- Select a game --</option></select>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="loadReport()">Load Report</button>
+            <button class="btn btn-outline" onclick="exportReport()">Download CSV</button>
+          </div>
+        </div>
+        <div id="reportResults" style="margin-top:20px;"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/auth.js"></script>
+
+  <script>
+    let currentQuizId=null, questionCount=0, editingQuizId=null, currentGameId=null;
+    let currentGameQuestions=[], currentQuestionIndex=0, adminTimerInterval=null;
+    let playersPollInterval=null, answersPollInterval=null, reportData=[];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await Auth.init();
+      if (user) {
+        const isAdmin = await Auth.checkAdminStatus(user.id);
+        if (isAdmin) { showAdminPanel(); loadQuizzes(); loadUsers(); loadCompletedGames(); }
+        else document.getElementById('loginModal').classList.add('active');
+      } else document.getElementById('loginModal').classList.add('active');
+    });
+
+    function toggleAdminPass(btn) {
+      const f = btn.previousElementSibling;
+      f.type = f.type === 'password' ? 'text' : 'password';
+      btn.textContent = f.type === 'password' ? '*' : '-';
+    }
+
+    async function adminLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) return Utils.showToast('Fill in all fields', 'error');
+      Utils.showLoading();
+      const result = await Auth.loginAdmin(email, password);
+      Utils.hideLoading();
+      if (result.success) { showAdminPanel(); loadQuizzes(); loadUsers(); loadCompletedGames(); }
+      else Utils.showToast(result.error, 'error');
+    }
+
+    function showAdminPanel() {
+      document.getElementById('loginModal').classList.remove('active');
+      document.getElementById('adminLayout').style.display = 'flex';
+    }
+
+    async function adminLogout() { await Auth.logout(); location.reload(); }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    }
+
+    // QUIZ MANAGER
+    async function loadQuizzes() {
+      const { data } = await supabaseClient.from('quizzes').select('*').eq('created_by', Auth.currentUser.id);
+      const c = document.getElementById('quizList'), e = document.getElementById('quizEmptyState');
+      if (!data || data.length === 0) { c.innerHTML = ''; e.style.display = 'block'; return; }
+      e.style.display = 'none';
+      let h = '';
+      data.forEach(q => {
+        h += `<div class="quiz-card"><div class="quiz-card-title">${Utils.sanitize(q.title)}</div>
+          <div class="quiz-card-meta"><span>${q.questions.length} questions</span><span>${q.created_at ? new Date(q.created_at).toLocaleDateString() : ''}</span></div>
+          <div class="quiz-card-actions"><button class="btn btn-sm btn-outline" onclick="editQuiz('${q.id}')">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteQuiz('${q.id}')">Delete</button></div></div>`;
+      });
+      c.innerHTML = h;
+      const sel = document.getElementById('gameQuizSelect');
+      sel.innerHTML = '<option value="">-- Select a quiz --</option>';
+      data.forEach(q => { sel.innerHTML += `<option value="${q.id}">${Utils.sanitize(q.title)} (${q.questions.length} Q)</option>`; });
+    }
+
+    function showQuizBuilder(qid) {
+      document.getElementById('quizListView').style.display = 'none';
+      document.getElementById('quizBuilderView').style.display = 'block';
+      editingQuizId = qid || null;
+      if (!qid) { document.getElementById('quizTitle').value = ''; document.getElementById('questionsContainer').innerHTML = ''; questionCount = 0; addQuestion(); }
+    }
+
+    function closeQuizBuilder() {
+      document.getElementById('quizListView').style.display = 'block';
+      document.getElementById('quizBuilderView').style.display = 'none';
+      editingQuizId = null;
+    }
+
+    function addQuestion() {
+      questionCount++; const n = questionCount;
+      const div = document.createElement('div'); div.className = 'question-item'; div.id = `question-${n}`;
+      div.innerHTML = `
+        <div class="question-item-header"><span class="question-item-number">Question ${n}</span><button class="btn btn-sm btn-danger" onclick="removeQuestion(${n})">Remove</button></div>
+        <div class="form-group"><label>Type</label>
+          <select class="form-control q-type" id="qType-${n}" onchange="toggleQuestionType(${n})">
+            <option value="mcq">Multiple Choice</option><option value="truefalse">True / False</option><option value="identification">Identification</option>
+          </select></div>
+        <div class="form-group"><label>Question Text</label><textarea class="form-control q-text" id="qText-${n}" placeholder="Type your question..."></textarea></div>
+        <div class="media-upload" onclick="uploadImage(${n})"><p>Click to upload an image (optional)</p><input type="file" id="qImage-${n}" accept="image/*" style="display:none" onchange="handleImageUpload(${n})"></div>
+        <div id="imagePreview-${n}" style="display:none; margin:10px 0;"><img id="qImg-${n}" style="max-width:200px; border-radius:8px;"><button class="btn btn-sm btn-danger" onclick="removeImage(${n})">Remove</button></div>
+        <div id="mcqOptions-${n}">
+          <div class="option-row"><input type="radio" name="correct-${n}" value="0" checked><input type="text" class="option-input" id="optA-${n}" placeholder="Option A"></div>
+          <div class="option-row"><input type="radio" name="correct-${n}" value="1"><input type="text" class="option-input" id="optB-${n}" placeholder="Option B"></div>
+          <div class="option-row"><input type="radio" name="correct-${n}" value="2"><input type="text" class="option-input" id="optC-${n}" placeholder="Option C"></div>
+          <div class="option-row"><input type="radio" name="correct-${n}" value="3"><input type="text" class="option-input" id="optD-${n}" placeholder="Option D"></div></div>
+        <div id="tfOptions-${n}" style="display:none;"><div class="option-row"><input type="radio" name="correct-${n}" value="0" checked><label>True</label></div><div class="option-row"><input type="radio" name="correct-${n}" value="1"><label>False</label></div></div>
+        <div id="idOptions-${n}" style="display:none;"><div class="form-group"><label>Correct Answer (case-insensitive)</label><input type="text" class="form-control" id="idAnswer-${n}" placeholder="Type the correct answer"></div></div>
+        <div class="question-meta"><div class="form-group"><label>Points</label><input type="number" class="form-control q-points" id="qPoints-${n}" value="100" min="10" max="500"></div><div class="form-group"><label>Time (seconds)</label><input type="number" class="form-control q-time" id="qTime-${n}" value="20" min="5" max="120"></div></div>`;
+      document.getElementById('questionsContainer').appendChild(div);
+    }
+
+    function removeQuestion(n) { const el = document.getElementById(`question-${n}`); if (el) el.remove(); }
+
+    function toggleQuestionType(n) {
+      const t = document.getElementById(`qType-${n}`).value;
+      document.getElementById(`mcqOptions-${n}`).style.display = t === 'mcq' ? 'block' : 'none';
+      document.getElementById(`tfOptions-${n}`).style.display = t === 'truefalse' ? 'block' : 'none';
+      document.getElementById(`idOptions-${n}`).style.display = t === 'identification' ? 'block' : 'none';
+    }
+
+    function uploadImage(n) { document.getElementById(`qImage-${n}`).click(); }
+
+    function handleImageUpload(n) {
+      const f = document.getElementById(`qImage-${n}`).files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = e => { document.getElementById(`qImg-${n}`).src = e.target.result; document.getElementById(`imagePreview-${n}`).style.display = 'block'; };
+      r.readAsDataURL(f);
+    }
+
+    function removeImage(n) { document.getElementById(`imagePreview-${n}`).style.display = 'none'; document.getElementById(`qImage-${n}`).value = ''; }
+
+    async function saveQuiz() {
+      const title = document.getElementById('quizTitle').value.trim();
+      if (!title) return Utils.showToast('Enter a quiz title', 'error');
+      const questions = [];
+      document.querySelectorAll('.question-item').forEach(item => {
+        const id = item.id.split('-')[1];
+        const type = document.getElementById(`qType-${id}`).value;
+        const text = document.getElementById(`qText-${id}`).value.trim();
+        const points = parseInt(document.getElementById(`qPoints-${id}`).value) || 100;
+        const timeLimit = parseInt(document.getElementById(`qTime-${id}`).value) || 20;
+        const imgEl = document.getElementById(`qImg-${id}`);
+        const imageUrl = imgEl && imgEl.src && document.getElementById(`imagePreview-${id}`).style.display !== 'none' ? imgEl.src : null;
+        let correctAnswer = 0, options = [];
+        if (type === 'mcq') {
+          const a = document.getElementById(`optA-${id}`).value.trim(), b = document.getElementById(`optB-${id}`).value.trim();
+          const c = document.getElementById(`optC-${id}`).value.trim(), d = document.getElementById(`optD-${id}`).value.trim();
+          if (!a || !b) return Utils.showToast(`Q${id}: Fill options A & B`, 'error');
+          options = [a, b, c, d].filter(o => o);
+          correctAnswer = parseInt(document.querySelector(`input[name="correct-${id}"]:checked`).value);
+        } else if (type === 'truefalse') {
+          options = ['True', 'False'];
+          correctAnswer = parseInt(document.querySelector(`input[name="correct-${id}"]:checked`).value);
+        } else {
+          const ans = document.getElementById(`idAnswer-${id}`).value.trim();
+          if (!ans) return Utils.showToast(`Q${id}: Enter answer`, 'error');
+          correctAnswer = ans.toLowerCase();
+        }
+        questions.push({ type, text, options, correctAnswer, points, timeLimit, imageUrl });
+      });
+      Utils.showLoading();
+      const d = { title, questions, created_by: Auth.currentUser.id };
+      if (editingQuizId) { const { error } = await supabaseClient.from('quizzes').update(d).eq('id', editingQuizId); if (error) { Utils.hideLoading(); return Utils.showToast('Error updating', 'error'); } }
+      else { const { error } = await supabaseClient.from('quizzes').insert(d); if (error) { Utils.hideLoading(); return Utils.showToast('Error creating', 'error'); } }
+      Utils.hideLoading(); Utils.showToast('Quiz saved!', 'success'); closeQuizBuilder(); loadQuizzes();
+    }
+
+    async function editQuiz(qid) {
+      const { data: quiz } = await supabaseClient.from('quizzes').select('*').eq('id', qid).single();
+      if (!quiz) return;
+      showQuizBuilder(qid);
+      document.getElementById('quizTitle').value = quiz.title;
+      document.getElementById('questionsContainer').innerHTML = ''; questionCount = 0;
+      quiz.questions.forEach(q => {
+        questionCount++; const n = questionCount; addQuestion();
+        document.getElementById(`qType-${n}`).value = q.type; toggleQuestionType(n);
+        document.getElementById(`qText-${n}`).value = q.text;
+        document.getElementById(`qPoints-${n}`).value = q.points;
+        document.getElementById(`qTime-${n}`).value = q.timeLimit;
+        if (q.type === 'mcq') {
+          if (q.options[0]) document.getElementById(`optA-${n}`).value = q.options[0];
+          if (q.options[1]) document.getElementById(`optB-${n}`).value = q.options[1];
+          if (q.options[2]) document.getElementById(`optC-${n}`).value = q.options[2];
+          if (q.options[3]) document.getElementById(`optD-${n}`).value = q.options[3];
+          document.querySelector(`input[name="correct-${n}"][value="${q.correctAnswer}"]`).checked = true;
+        } else if (q.type === 'truefalse') {
+          document.querySelector(`input[name="correct-${n}"][value="${q.correctAnswer}"]`).checked = true;
+        } else { document.getElementById(`idAnswer-${n}`).value = q.correctAnswer; }
+        if (q.imageUrl) { document.getElementById(`qImg-${n}`).src = q.imageUrl; document.getElementById(`imagePreview-${n}`).style.display = 'block'; }
+      });
+    }
+
+    async function deleteQuiz(qid) {
+      if (!confirm('Delete this quiz?')) return;
+      await supabaseClient.from('quizzes').delete().eq('id', qid);
+      Utils.showToast('Quiz deleted', 'success'); loadQuizzes();
+    }
+
+    // USER MANAGEMENT
+    async function loadUsers() {
+      const { data } = await supabaseClient.from('user_profiles').select('*');
+      const tb = document.getElementById('usersTableBody');
+      if (!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">No users registered</td></tr>'; return; }
+      let h = '';
+      data.forEach(u => {
+        h += `<tr><td><strong>${Utils.sanitize(u.name)}</strong><br><small style="color:var(--text-muted)">${u.id.substring(0,8)}...</small></td>
+          <td>${Utils.sanitize(u.year_section || '-')}</td><td>${u.games_played || 0}</td><td>${u.total_points || 0}</td>
+          <td><button class="btn btn-sm btn-danger" onclick="banUser('${u.id}')">Ban</button></td></tr>`;
+      });
+      tb.innerHTML = h;
+    }
+
+    async function banUser(uid) {
+      if (!confirm('Ban this user?')) return;
+      await supabaseClient.from('banned').upsert({ user_id: uid, banned_by: Auth.currentUser.id });
+      Utils.showToast('User banned', 'success');
+    }
+
+    // LIVE GAME
+    function startPlayersPoll(gid) {
+      stopPlayersPoll();
+      playersPollInterval = setInterval(async () => {
+        const { data } = await supabaseClient.from('game_players').select('*').eq('game_id', gid);
+        if (data) {
+          let h = '';
+          data.forEach(p => { h += `<div class="player-card"><span class="player-name">${Utils.sanitize(p.player_name)}</span></div>`; });
+          document.getElementById('playersGrid').innerHTML = h;
+          document.getElementById('playerCount').textContent = `${data.length} player${data.length !== 1 ? 's' : ''} joined`;
+        }
+      }, 2000);
+    }
+
+    function stopPlayersPoll() { if (playersPollInterval) { clearInterval(playersPollInterval); playersPollInterval = null; } }
+
+    function startAnswersPoll(gid) {
+      stopAnswersPoll();
+      answersPollInterval = setInterval(async () => {
+        const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', gid);
+        if (!players) return;
+        let h = '', answered = 0, total = 0;
+        for (const p of players) {
+          const { data: ad } = await supabaseClient.from('game_answers').select('*').eq('game_id', gid).eq('user_id', p.user_id).eq('question_index', currentQuestionIndex).single();
+          total++;
+          let sc = 'waiting', st = 'Waiting...';
+          if (ad) { answered++; sc = ad.correct ? 'correct' : 'incorrect'; st = ad.correct ? 'Correct' : 'Wrong'; }
+          h += `<div class="answer-card ${sc}"><strong style="font-size:0.85rem;">${Utils.sanitize(p.player_name)}</strong><br><small>${st}</small></div>`;
+        }
+        document.getElementById('answerGrid').innerHTML = h;
+        document.getElementById('answersReceived').textContent = `${answered}/${total} answered`;
+      }, 2000);
+    }
+
+    function stopAnswersPoll() { if (answersPollInterval) { clearInterval(answersPollInterval); answersPollInterval = null; } }
+
+    async function createGame() {
+      const quizId = document.getElementById('gameQuizSelect').value;
+      if (!quizId) return Utils.showToast('Select a quiz', 'error');
+      const mode = document.getElementById('gameMode').value;
+      const groupSize = parseInt(document.getElementById('groupSize').value) || 5;
+      const pin = Utils.generateGamePin();
+      const { data: quiz } = await supabaseClient.from('quizzes').select('*').eq('id', quizId).single();
+      if (!quiz) return Utils.showToast('Quiz not found', 'error');
+      const { data: gd } = await supabaseClient.from('games').insert({ pin, quiz_id: quizId, quiz_title: quiz.title, host_id: Auth.currentUser.id, mode, group_size: mode === 'group' ? groupSize : 1, status: 'waiting', questions: quiz.questions, current_question: 0 }).select();
+      if (!gd) return Utils.showToast('Error creating game', 'error');
+      currentGameId = gd[0].id;
+      document.getElementById('gamePinDisplay').textContent = pin;
+      document.getElementById('gameSetup').style.display = 'none';
+      document.getElementById('gameWaitingRoom').style.display = 'block';
+      startPlayersPoll(currentGameId);
+      Utils.showToast('Game created!', 'success');
+    }
+
+    async function startGame() {
+      const { data: g } = await supabaseClient.from('games').select('*').eq('id', currentGameId).single();
+      currentGameQuestions = g.questions; currentQuestionIndex = 0;
+      await supabaseClient.from('games').update({ status: 'active' }).eq('id', currentGameId);
+      document.getElementById('gameWaitingRoom').style.display = 'none';
+      document.getElementById('gameInPlay').style.display = 'block';
+      document.getElementById('totalQNum').textContent = currentGameQuestions.length;
+      showCurrentQuestion();
+    }
+
+    function showCurrentQuestion() {
+      const q = currentGameQuestions[currentQuestionIndex];
+      document.getElementById('currentQNum').textContent = currentQuestionIndex + 1;
+      const pct = ((currentQuestionIndex + 1) / currentGameQuestions.length) * 100;
+      document.getElementById('gameProgressFill').style.width = `${pct}%`;
+      let h = `<h3 style="margin-bottom:10px;">${Utils.sanitize(q.text)}</h3>`;
+      if (q.imageUrl) h += `<img src="${q.imageUrl}" style="max-width:280px; border-radius:8px; margin-bottom:10px;">`;
+      h += `<span class="question-points">${q.points} pts &bull; ${q.timeLimit}s</span>`;
+      document.getElementById('currentQuestionDisplay').innerHTML = h;
+      supabaseClient.from('games').update({ status: 'answering', current_question: currentQuestionIndex }).eq('id', currentGameId);
+      startAdminTimer(q.timeLimit);
+      startAnswersPoll(currentGameId);
+    }
+
+    function startAdminTimer(sec) {
+      clearInterval(adminTimerInterval); let r = sec;
+      const el = document.getElementById('adminTimer'); el.textContent = r; el.className = 'timer-circle timer-green';
+      adminTimerInterval = setInterval(() => {
+        r--; el.textContent = r;
+        if (r <= 10) el.className = 'timer-circle timer-yellow';
+        if (r <= 5) el.className = 'timer-circle timer-red';
+        if (r <= 0) { clearInterval(adminTimerInterval); supabaseClient.from('games').update({ status: 'feedback' }).eq('id', currentGameId); }
+      }, 1000);
+    }
+
+    async function nextQuestion() {
+      clearInterval(adminTimerInterval); stopAnswersPoll();
+      currentQuestionIndex++;
+      if (currentQuestionIndex >= currentGameQuestions.length) { await endGame(); return; }
+      showCurrentQuestion();
+    }
+
+    async function showLeaderboard() {
+      clearInterval(adminTimerInterval);
+      const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', currentGameId);
+      if (!players) return;
+      const { data: aa } = await supabaseClient.from('game_answers').select('*').eq('game_id', currentGameId);
+      const pw = players.map(p => {
+        const pa = aa ? aa.filter(a => a.user_id === p.user_id) : [];
+        let ts = 0, cc = 0; pa.forEach(a => { ts += a.score || 0; if (a.correct) cc++; });
+        return { ...p, totalScore: ts, correctCount: cc };
+      }).sort((a, b) => b.totalScore - a.totalScore);
+
+      let h = '<h3 style="text-align:center; margin-bottom:20px;">Leaderboard</h3>';
+      pw.slice(0, 10).forEach((p, i) => {
+        const ri = i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : `${i+1}th`;
+        h += `<div class="leaderboard-entry"><span class="rank">${ri}</span><span class="leaderboard-name">${Utils.sanitize(p.player_name)}</span><span class="leaderboard-score">${p.totalScore} pts</span></div>`;
+      });
+      document.getElementById('currentQuestionDisplay').innerHTML = h;
+      document.getElementById('answerGrid').innerHTML = '';
+    }
+
+    async function endGame() {
+      clearInterval(adminTimerInterval); stopPlayersPoll(); stopAnswersPoll();
+      await supabaseClient.from('games').update({ status: 'ended' }).eq('id', currentGameId);
+      const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', currentGameId);
+      const { data: game } = await supabaseClient.from('games').select('*').eq('id', currentGameId).single();
+      const { data: aa } = await supabaseClient.from('game_answers').select('*').eq('game_id', currentGameId);
+      const entries = [];
+      for (const p of (players || [])) {
+        const pa = aa ? aa.filter(a => a.user_id === p.user_id) : [];
+        let ts = 0, cc = 0; pa.forEach(a => { ts += a.score || 0; if (a.correct) cc++; });
+        entries.push({ user_id: p.user_id, player_name: p.player_name, quiz_title: game.quiz_title, total_score: ts, correct_count: cc, total_questions: game.questions.length, game_id: currentGameId });
+      }
+      await supabaseClient.from('leaderboards').insert(entries);
+      for (const e of entries) {
+        const { data: prof } = await supabaseClient.from('user_profiles').select('total_points, games_played').eq('id', e.user_id).single();
+        await supabaseClient.from('user_profiles').update({ total_points: (prof.total_points || 0) + e.total_score, games_played: (prof.games_played || 0) + 1 }).eq('id', e.user_id);
+      }
+      Utils.showToast('Game ended! Results saved.', 'success');
+      document.getElementById('gameInPlay').style.display = 'none';
+      document.getElementById('gameSetup').style.display = 'block';
+      currentGameId = null;
+    }
+
+    // REPORTS
+    async function loadCompletedGames() {
+      const { data } = await supabaseClient.from('games').select('*').eq('host_id', Auth.currentUser.id).eq('status', 'ended').order('ended_at', { ascending: false });
+      const sel = document.getElementById('reportGameSelect');
+      sel.innerHTML = '<option value="">-- Select a game --</option>';
+      if (data) data.forEach(g => { sel.innerHTML += `<option value="${g.id}">${Utils.sanitize(g.quiz_title)} - ${g.pin}</option>`; });
+    }
+
+    async function loadReport() {
+      const gid = document.getElementById('reportGameSelect').value;
+      if (!gid) return Utils.showToast('Select a game', 'error');
+      Utils.showLoading();
+      const { data: game } = await supabaseClient.from('games').select('*').eq('id', gid).single();
+      const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', gid);
+      const { data: aa } = await supabaseClient.from('game_answers').select('*').eq('game_id', gid);
+      reportData = [];
+      for (const p of (players || [])) {
+        const pa = aa ? aa.filter(a => a.user_id === p.user_id) : [];
+        let ts = 0, cc = 0; pa.forEach(a => { ts += a.score || 0; if (a.correct) cc++; });
+        reportData.push({ Name: p.player_name, 'Total Score': ts, 'Correct Answers': cc, 'Total Questions': game.questions.length, 'Accuracy %': Math.round((cc / game.questions.length) * 100) });
+      }
+      reportData.sort((a, b) => b['Total Score'] - a['Total Score']);
+      let h = '<table class="user-table"><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Correct</th><th>Accuracy</th></tr></thead><tbody>';
+      reportData.forEach((r, i) => { h += `<tr><td>${i+1}</td><td>${Utils.sanitize(r.Name)}</td><td>${r['Total Score']}</td><td>${r['Correct Answers']}/${r['Total Questions']}</td><td>${r['Accuracy %']}%</td></tr>`; });
+      h += '</tbody></table>';
+      document.getElementById('reportResults').innerHTML = h;
+      Utils.hideLoading();
+    }
+
+    function exportReport() {
+      if (!reportData.length) return Utils.showToast('Load a report first', 'error');
+      Utils.downloadCSV(reportData, `quiz-report-${Date.now()}.csv`);
+    }
+  </script>
+</body>
+</html>

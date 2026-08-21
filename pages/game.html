@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game - QuizBattle</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .game-page {
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .game-page.timer-active { justify-content: flex-start; padding-top: 30px; }
+
+    .game-state { display: none; text-align: center; width: 100%; max-width: 680px; }
+    .game-state.active { display: block; animation: fadeIn 0.4s ease; }
+
+    .waiting-screen h2 { font-size: 1.8rem; margin-bottom: 12px; color: var(--accent); }
+    .waiting-screen p { color: var(--text-secondary); font-size: 1.05rem; }
+
+    .end-screen h1 { font-size: 2rem; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay"><div class="spinner"></div></div>
+
+  <div class="game-page" id="gamePage">
+    <!-- Joining -->
+    <div class="game-state active" id="state-joining">
+      <div class="waiting-screen">
+        <h2>Joining Game...</h2>
+        <div class="spinner" style="margin:24px auto;"></div>
+      </div>
+    </div>
+
+    <!-- Waiting -->
+    <div class="game-state" id="state-waiting">
+      <div class="waiting-screen">
+        <h2>You're In!</h2>
+        <h3 id="myName" style="margin:12px 0;"></h3>
+        <p>Get ready... The quiz will start soon!</p>
+      </div>
+    </div>
+
+    <!-- Question -->
+    <div class="game-state" id="state-question">
+      <div class="timer-container">
+        <div class="timer-circle timer-green" id="gameTimer">20</div>
+      </div>
+      <div class="question-card">
+        <div class="question-number">Question <span id="qNumber">1</span> of <span id="qTotal">0</span></div>
+        <div class="question-points" id="qPoints">100 pts</div>
+        <p class="question-text" id="qText"></p>
+        <img class="question-image" id="qImage" style="display:none;">
+        <div id="mcqOptions" class="options-grid" style="display:none;"></div>
+        <div id="identificationInput" style="display:none;">
+          <input type="text" class="identification-input" id="idInput" placeholder="Type your answer..." autocomplete="off">
+          <button class="btn btn-primary btn-lg" style="margin-top:16px; width:100%;" onclick="submitIdentification()">Submit Answer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="game-state" id="state-feedback">
+      <div class="feedback-banner" id="feedbackBanner">
+        <h3 id="feedbackTitle"></h3>
+        <p id="feedbackMessage"></p>
+      </div>
+      <div class="rank-badge" id="rankBadge" style="display:none;"></div>
+      <p style="color:var(--text-muted); margin-top:28px;">Waiting for the next question...</p>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="game-state" id="state-leaderboard">
+      <h2 style="margin-bottom:20px;">Leaderboard</h2>
+      <div id="liveLeaderboard" class="leaderboard"></div>
+      <p style="color:var(--text-muted); margin-top:20px;">Next question coming up...</p>
+    </div>
+
+    <!-- Ended -->
+    <div class="game-state" id="state-ended">
+      <div class="end-screen">
+        <h1>Quiz Complete!</h1>
+        <div class="final-score" id="finalScore">0</div>
+        <p style="color:var(--text-secondary);">points</p>
+        <div class="final-stats">
+          <div class="final-stat">
+            <div class="value" id="finalCorrect">0</div>
+            <div class="label">Correct</div>
+          </div>
+          <div class="final-stat">
+            <div class="value" id="finalTotal">0</div>
+            <div class="label">Questions</div>
+          </div>
+          <div class="final-stat">
+            <div class="value" id="finalRank">#-</div>
+            <div class="label">Final Rank</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/auth.js"></script>
+
+  <script>
+    let gamePin='', gameId=null, gameData=null, currentQIndex=0, questionStartTime=null;
+    let timerInterval=null, hasAnswered=false, myScore=0, gamePollInterval=null;
+    let previousGameStatus=null, previousQuestionIndex=-1;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await Auth.init();
+      if (!user) { window.location.href = 'login.html'; return; }
+      gamePin = new URLSearchParams(window.location.search).get('code');
+      if (!gamePin) {
+        document.getElementById('state-joining').innerHTML = '<div class="waiting-screen"><h2>No Game Code</h2><p style="margin-bottom:20px;">Please join from the dashboard.</p><button class="btn btn-primary" onclick="window.location.href=\'dashboard.html\'">Go to Dashboard</button></div>';
+        return;
+      }
+      await joinGame(user.id);
+    });
+
+    async function joinGame(uid) {
+      try {
+        const { data: game } = await supabaseClient.from('games').select('*').eq('pin', gamePin).limit(1).maybeSingle();
+        if (!game) {
+          document.getElementById('state-joining').innerHTML = `<div class="waiting-screen"><h2>Game Not Found</h2><p style="margin-bottom:20px;">Code "${gamePin}" didn't match.</p><button class="btn btn-primary" onclick="window.location.href='dashboard.html'">Back to Dashboard</button></div>`;
+          return;
+        }
+        gameId = game.id; gameData = game;
+
+        const { data: banned } = await supabaseClient.from('banned').select('*').eq('user_id', uid).maybeSingle();
+        if (banned) { Utils.showToast('You have been banned', 'error'); return; }
+
+        let { data: ud } = await supabaseClient.from('user_profiles').select('*').eq('id', uid).maybeSingle();
+        if (!ud) {
+          const stored = JSON.parse(localStorage.getItem('qb_profile') || '{}');
+          const name = stored.name || Auth.currentUser?.user_metadata?.name || 'Player';
+          await supabaseClient.from('user_profiles').upsert({ id: uid, name, is_guest: true, total_points: 0, games_played: 0 }, { onConflict: 'id', ignoreDuplicates: true });
+          const { data: r } = await supabaseClient.from('user_profiles').select('*').eq('id', uid).maybeSingle();
+          ud = r;
+        }
+        if (!ud) { Utils.showToast('Error loading profile', 'error'); return; }
+
+        await supabaseClient.from('game_players').upsert({ game_id: gameId, user_id: uid, player_name: ud.name });
+        document.getElementById('myName').textContent = ud.name;
+        showState('waiting');
+        startGamePolling(gameId);
+      } catch (e) { console.error(e); Utils.showToast('Error joining game', 'error'); }
+    }
+
+    function startGamePolling(gid) {
+      gamePollInterval = setInterval(async () => {
+        const { data } = await supabaseClient.from('games').select('*').eq('id', gid).single();
+        if (!data) return;
+        if (data.status !== previousGameStatus || data.current_question !== previousQuestionIndex) {
+          previousGameStatus = data.status; previousQuestionIndex = data.current_question;
+          gameData = data; handleGameStatusChange(data);
+        }
+      }, 2000);
+    }
+
+    function handleGameStatusChange(d) {
+      switch (d.status) {
+        case 'active': case 'answering':
+          if (d.current_question !== undefined && (d.current_question !== currentQIndex || d.status === 'answering') && !hasAnswered) {
+            currentQIndex = d.current_question; showQuestion();
+          } break;
+        case 'feedback': showFeedbackFromServer(); break;
+        case 'ended': showEndScreen(); break;
+      }
+    }
+
+    function showState(s) {
+      document.querySelectorAll('.game-state').forEach(el => el.classList.remove('active'));
+      document.getElementById(`state-${s}`).classList.add('active');
+      document.getElementById('gamePage').classList.toggle('timer-active', s === 'question');
+    }
+
+    function showQuestion() {
+      hasAnswered = false; showState('question');
+      const q = gameData.questions[currentQIndex];
+      document.getElementById('qNumber').textContent = currentQIndex + 1;
+      document.getElementById('qTotal').textContent = gameData.questions.length;
+      document.getElementById('qText').textContent = q.text;
+      document.getElementById('qPoints').textContent = `${q.points} pts`;
+      const img = document.getElementById('qImage');
+      if (q.imageUrl) { img.src = q.imageUrl; img.style.display = 'block'; } else { img.style.display = 'none'; }
+
+      if (q.type === 'mcq') {
+        const g = document.getElementById('mcqOptions'); g.innerHTML = ''; g.style.display = 'grid'; g.style.gridTemplateColumns = '';
+        document.getElementById('identificationInput').style.display = 'none';
+        const L = ['A','B','C','D'];
+        q.options.forEach((o, i) => { g.innerHTML += `<button class="option-btn" onclick="submitMCQ(${i})" id="opt-${i}"><span class="option-label">${L[i]}</span>${Utils.sanitize(o)}</button>`; });
+      } else if (q.type === 'truefalse') {
+        const g = document.getElementById('mcqOptions'); g.innerHTML = ''; g.style.display = 'grid'; g.style.gridTemplateColumns = '1fr 1fr';
+        document.getElementById('identificationInput').style.display = 'none';
+        g.innerHTML = '<button class="option-btn" onclick="submitMCQ(0)" id="opt-0"><span class="option-label">A</span>True</button><button class="option-btn" onclick="submitMCQ(1)" id="opt-1"><span class="option-label">B</span>False</button>';
+      } else if (q.type === 'identification') {
+        document.getElementById('mcqOptions').style.display = 'none'; document.getElementById('mcqOptions').innerHTML = '';
+        document.getElementById('identificationInput').style.display = 'block';
+        document.getElementById('idInput').value = '';
+        setTimeout(() => document.getElementById('idInput').focus(), 100);
+      }
+      questionStartTime = Date.now(); startGameTimer(q.timeLimit);
+    }
+
+    function startGameTimer(sec) {
+      clearInterval(timerInterval); let r = sec;
+      const el = document.getElementById('gameTimer'); el.textContent = r; el.className = 'timer-circle timer-green';
+      timerInterval = setInterval(() => {
+        r--; el.textContent = r;
+        if (r <= 10) el.className = 'timer-circle timer-yellow';
+        if (r <= 5) el.className = 'timer-circle timer-red';
+        if (r <= 0) { clearInterval(timerInterval); if (!hasAnswered) { hasAnswered = true; submitAnswer(null, true); } }
+      }, 1000);
+    }
+
+    async function submitMCQ(i) {
+      if (hasAnswered) return; hasAnswered = true; clearInterval(timerInterval);
+      document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+      document.getElementById(`opt-${i}`).classList.add('selected');
+      await submitAnswer(i, false);
+    }
+
+    async function submitIdentification() {
+      if (hasAnswered) return;
+      const a = document.getElementById('idInput').value.trim(); if (!a) return;
+      hasAnswered = true; clearInterval(timerInterval); document.getElementById('idInput').disabled = true;
+      await submitAnswer(a, false);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !hasAnswered) {
+        const el = document.getElementById('idInput');
+        if (el && el.offsetParent !== null) submitIdentification();
+      }
+    });
+
+    async function submitAnswer(answer, isTimeout) {
+      const q = gameData.questions[currentQIndex];
+      const te = (Date.now() - questionStartTime) / 1000;
+      let correct = false;
+      if (!isTimeout && answer !== null) {
+        if (q.type === 'mcq' || q.type === 'truefalse') correct = answer === q.correctAnswer;
+        else correct = answer.toLowerCase() === q.correctAnswer.toLowerCase();
+      }
+      const score = correct ? Utils.calculateSpeedScore(te, q.points) : 0;
+      myScore += score;
+      await supabaseClient.from('game_answers').upsert({ game_id: gameId, user_id: Auth.currentUser.id, question_index: currentQIndex, answer, correct, score, time_elapsed: te });
+      if (score > 0) {
+        const p = document.createElement('div'); p.className = 'score-popup'; p.textContent = `+${score}`;
+        document.body.appendChild(p); setTimeout(() => p.remove(), 1000);
+      }
+    }
+
+    async function showFeedbackFromServer() {
+      showState('feedback');
+      const { data: ad } = await supabaseClient.from('game_answers').select('*').eq('game_id', gameId).eq('user_id', Auth.currentUser.id).eq('question_index', currentQIndex).maybeSingle();
+      const b = document.getElementById('feedbackBanner'), t = document.getElementById('feedbackTitle'), m = document.getElementById('feedbackMessage'), rb = document.getElementById('rankBadge');
+      const q = gameData.questions[currentQIndex];
+      const correctText = (q.type === 'mcq' || q.type === 'truefalse') ? q.options[q.correctAnswer] : q.correctAnswer;
+      if (ad) {
+        if (ad.correct) { b.className = 'feedback-banner correct'; t.textContent = 'Correct!'; m.textContent = `+${ad.score} points`; }
+        else { b.className = 'feedback-banner incorrect'; t.textContent = 'Incorrect'; m.textContent = `Correct: ${correctText}`; }
+      } else { b.className = 'feedback-banner timeout'; t.textContent = "Time's Up!"; m.textContent = `Correct: ${correctText}`; }
+      await updateRankDisplay(rb);
+    }
+
+    async function updateRankDisplay(badge) {
+      try {
+        const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', gameId);
+        if (!players) return;
+        const scores = [];
+        for (const p of players) {
+          const { data: a } = await supabaseClient.from('game_answers').select('score').eq('game_id', gameId).eq('user_id', p.user_id);
+          let t = 0; if (a) a.forEach(x => t += x.score || 0);
+          scores.push({ uid: p.user_id, total: t });
+        }
+        scores.sort((a, b) => b.total - a.total);
+        const rank = scores.findIndex(s => s.uid === Auth.currentUser.id) + 1;
+        badge.textContent = `Your Rank: #${rank}`; badge.style.display = 'inline-block';
+      } catch (e) { console.error(e); }
+    }
+
+    async function showEndScreen() {
+      clearInterval(timerInterval);
+      if (gamePollInterval) { clearInterval(gamePollInterval); gamePollInterval = null; }
+      showState('ended');
+      document.getElementById('finalScore').textContent = myScore;
+      document.getElementById('finalTotal').textContent = gameData.questions.length;
+      const { data: ma } = await supabaseClient.from('game_answers').select('correct').eq('game_id', gameId).eq('user_id', Auth.currentUser.id);
+      let cc = 0; if (ma) ma.forEach(a => { if (a.correct) cc++; });
+      document.getElementById('finalCorrect').textContent = cc;
+      const { data: players } = await supabaseClient.from('game_players').select('*').eq('game_id', gameId);
+      const scores = [];
+      if (players) { for (const p of players) { const { data: a } = await supabaseClient.from('game_answers').select('score').eq('game_id', gameId).eq('user_id', p.user_id); let t = 0; if (a) a.forEach(x => t += x.score || 0); scores.push({ uid: p.user_id, total: t }); } }
+      scores.sort((a, b) => b.total - a.total);
+      const rank = scores.findIndex(s => s.uid === Auth.currentUser.id) + 1;
+      document.getElementById('finalRank').textContent = `#${rank}`;
+      if (rank <= 3) Utils.createConfetti(document.getElementById('confettiContainer'));
+    }
+
+    window.addEventListener('beforeunload', () => { if (gamePollInterval) clearInterval(gamePollInterval); if (timerInterval) clearInterval(timerInterval); });
+  </script>
+
+  <!-- Floating theme toggle -->
+  <button class="theme-toggle theme-toggle-float" onclick="Theme.toggle()" aria-label="Toggle theme">
+    <div class="knob"><div class="icon-sun"></div><div class="icon-moon"></div></div>
+  </button>
+</body>
+</html>
